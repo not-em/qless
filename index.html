@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q-Less</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-page:      #f5f3ef;
+      --bg-card:      #ffffff;
+      --bg-input:     #f5f3ef;
+      --color-text:   #2C2C2A;
+      --color-muted:  #888780;
+      --color-hint:   #b4b2a9;
+      --color-border: #d3d1c7;
+      --color-border-strong: #888780;
+      --tile-bg:      #ffffff;
+      --tile-border:  #888780;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-page:      #1a1a18;
+        --bg-card:      #242422;
+        --bg-input:     #1a1a18;
+        --color-text:   #e8e6e0;
+        --color-muted:  #888780;
+        --color-hint:   #5f5e5a;
+        --color-border: #3a3a38;
+        --color-border-strong: #888780;
+        --tile-bg:      #242422;
+        --tile-border:  #888780;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-page);
+      color: var(--color-text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem;
+    }
+
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { font-size: 2rem; font-weight: 500; letter-spacing: -0.5px; }
+    header p { margin-top: 0.4rem; font-size: 0.9rem; color: var(--color-muted); }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 0.5px solid var(--color-border);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 700px;
+    }
+
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px;
+    }
+
+    .toolbar-title { font-size: 13px; color: var(--color-muted); }
+
+    .btn {
+      padding: 7px 16px; font-size: 13px; border-radius: 8px; cursor: pointer;
+      border: 0.5px solid var(--color-border); background: var(--bg-input);
+      color: var(--color-text); font-family: inherit; transition: all 0.15s;
+    }
+    .btn:hover { border-color: var(--color-border-strong); }
+    .btn.primary { border: 1.5px solid var(--color-border-strong); font-weight: 500; }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+
+    .board-wrap {
+      border: 0.5px solid var(--color-border);
+      border-radius: 12px;
+      background: var(--bg-input);
+      margin-bottom: 1.25rem;
+      overflow: visible;
+    }
+
+    .board {
+      width: 100%; height: 380px; position: relative; border-radius: 12px;
+      background-image:
+        linear-gradient(var(--color-border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .tray-label { font-size: 12px; color: var(--color-hint); margin-bottom: 6px; }
+    .tray {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; min-height: 66px;
+      border: 0.5px solid var(--color-border); border-radius: 12px;
+      background: var(--bg-card);
+    }
+
+    .tile {
+      width: 42px; height: 42px; border-radius: 6px;
+      border: 1px solid var(--tile-border);
+      background: var(--tile-bg);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 500; font-size: 20px; color: var(--color-text);
+      cursor: grab; user-select: none; box-sizing: border-box;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .tile.on-board { position: absolute; }
+    .tile.floating  { position: fixed; z-index: 9999; pointer-events: none; opacity: 0.9; }
+    .tile.valid   { background: #EAF3DE; border-color: #639922; color: #27500A; }
+    .tile.invalid { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+
+    .status {
+      font-size: 13px; color: var(--color-muted);
+      text-align: center; padding: 8px 0 0; min-height: 22px; line-height: 1.5;
+    }
+    .status.error   { color: #A32D2D; }
+    .status.success { color: #27500A; font-weight: 500; }
+    .status.loading { color: var(--color-hint); }
+
+    .win {
+      display: none; text-align: center; padding: 1.5rem;
+      background: #EAF3DE; border-radius: 12px; margin-top: 1rem;
+      border: 1px solid #639922;
+    }
+    .win.show { display: block; }
+    .win h2 { font-size: 1.25rem; font-weight: 500; color: #27500A; margin-bottom: 4px; }
+    .win p  { font-size: 13px; color: #3B6D11; }
+
+    footer { margin-top: 2.5rem; font-size: 0.78rem; color: var(--color-hint); text-align: center; line-height: 1.8; }
+    footer a { color: var(--color-muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Q-Less</h1>
+  <p>Use all 12 letters to make connected words — like a crossword.</p>
+</header>
+
+<div class="card">
+  <div class="toolbar">
+    <span class="toolbar-title">Words must be 3+ letters &middot; no proper nouns &middot; all tiles must connect</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn" onclick="clearBoard()">Clear board</button>
+      <button class="btn" onclick="rollDice()">Reroll</button>
+      <button class="btn primary" id="checkBtn" onclick="checkWords()" disabled>Check words</button>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="tray-label">Your tiles — drag onto the board to build words</div>
+  <div class="tray" id="tray"></div>
+
+  <div class="status loading" id="status">Loading word list...</div>
+
+  <div class="win" id="winBox">
+    <h2>You solved it!</h2>
+    <p>All 12 letters used in connected, valid words. Well done.</p>
+  </div>
+</div>
+
+<footer>
+  Built with Claude &amp; a lot of iteration &hearts;<br>
+  Word list: <a href="https://github.com/jesstess/Scrabble" target="_blank">SOWPODS via jesstess/Scrabble</a>
+</footer>
+
+<script>
+const CELL = 48, TILE = 42, OFFSET = (CELL - TILE) / 2;
+
+const DICE = [
+  ['A','E','I','O','U','N'], ['A','E','I','O','U','T'], ['A','E','I','O','U','R'],
+  ['B','C','D','F','G','H'], ['J','K','L','M','N','P'], ['R','S','T','V','W','X'],
+  ['A','E','I','N','R','S'], ['A','E','I','O','T','S'], ['E','I','O','U','L','S'],
+  ['B','C','D','F','M','Y'], ['G','H','J','K','P','Z'], ['N','R','S','T','V','W'],
+];
+
+let tiles = [], dragTile = null, floater = null, dragOffX = 0, dragOffY = 0;
+let wordSet = null, checking = false;
+
+async function loadWordList() {
+  try {
+    const res = await fetch('words.txt');
+    if (!res.ok) throw new Error('not ok');
+    const text = await res.text();
+    wordSet = new Set(
+      text.split('\n')
+        .map(w => w.trim().toLowerCase())
+        .filter(w => w.length >= 3)
+    );
+    setStatus('Drag all 12 tiles onto the board, then hit "Check words".', '');
+    rollDice();
+  } catch {
+    setStatus('Could not load word list — make sure words.txt is in the same folder.', 'error');
+  }
+}
+
+function rollDie(d) { return d[Math.floor(Math.random() * d.length)]; }
+
+function rollDice() {
+  tiles = [];
+  document.getElementById('board').innerHTML = '';
+  document.getElementById('tray').innerHTML = '';
+  document.getElementById('winBox').classList.remove('show');
+  if (wordSet) setStatus('Drag all 12 tiles onto the board, then hit "Check words".', '');
+  const tray = document.getElementById('tray');
+  DICE.map(rollDie).forEach((letter, i) => {
+    const tile = { id: i, letter, onBoard: false, gridX: 0, gridY: 0, el: null };
+    tiles.push(tile);
+    tile.el = makeTile(tile);
+    tray.appendChild(tile.el);
+  });
+  updateCheckBtn();
+}
+
+function makeTile(tile) {
+  const el = document.createElement('div');
+  el.className = 'tile';
+  el.textContent = tile.letter;
+  el.addEventListener('mousedown', e => startDrag(e, tile));
+  el.addEventListener('touchstart', e => startDrag(e, tile), { passive: false });
+  return el;
+}
+
+function startDrag(e, tile) {
+  e.preventDefault();
+  if (checking) return;
+  dragTile = tile;
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  dragOffX = TILE / 2; dragOffY = TILE / 2;
+  floater = document.createElement('div');
+  floater.className = 'tile floating';
+  floater.textContent = tile.letter;
+  floater.style.cssText = `width:${TILE}px;height:${TILE}px;left:${cx - dragOffX}px;top:${cy - dragOffY}px;`;
+  document.body.appendChild(floater);
+  tile.el.style.opacity = '0.2';
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchmove', onDrag, { passive: false });
+  document.addEventListener('touchend', endDrag);
+}
+
+function onDrag(e) {
+  if (!floater) return;
+  e.preventDefault();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  floater.style.left = (cx - dragOffX) + 'px';
+  floater.style.top  = (cy - dragOffY) + 'px';
+}
+
+function endDrag(e) {
+  if (!dragTile) return;
+  const cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+  const cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+  if (floater) { floater.remove(); floater = null; }
+  dragTile.el.style.opacity = '';
+
+  const board = document.getElementById('board');
+  const tray  = document.getElementById('tray');
+  const br = board.getBoundingClientRect();
+  const over = cx >= br.left && cx <= br.right && cy >= br.top && cy <= br.bottom;
+
+  if (over) {
+    const gx = Math.max(0, Math.min(Math.floor(br.width  / CELL) - 1, Math.round((cx - br.left - CELL / 2) / CELL)));
+    const gy = Math.max(0, Math.min(Math.floor(br.height / CELL) - 1, Math.round((cy - br.top  - CELL / 2) / CELL)));
+    dragTile.el.classList.add('on-board');
+    dragTile.el.style.left = (gx * CELL + OFFSET) + 'px';
+    dragTile.el.style.top  = (gy * CELL + OFFSET) + 'px';
+    dragTile.onBoard = true; dragTile.gridX = gx; dragTile.gridY = gy;
+    if (dragTile.el.parentElement !== board) board.appendChild(dragTile.el);
+    clearTileColors();
+  } else {
+    dragTile.onBoard = false;
+    dragTile.el.classList.remove('on-board', 'valid', 'invalid');
+    dragTile.el.style.left = dragTile.el.style.top = dragTile.el.style.position = '';
+    if (dragTile.el.parentElement !== tray) tray.appendChild(dragTile.el);
+    clearTileColors();
+  }
+
+  dragTile = null;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', endDrag);
+  document.removeEventListener('touchmove', onDrag);
+  document.removeEventListener('touchend', endDrag);
+  updateCheckBtn();
+  updateStatus();
+}
+
+function clearBoard() {
+  const tray = document.getElementById('tray');
+  tiles.forEach(t => {
+    if (t.onBoard) {
+      t.onBoard = false;
+      t.el.classList.remove('on-board', 'valid', 'invalid');
+      t.el.style.left = t.el.style.top = t.el.style.position = '';
+      tray.appendChild(t.el);
+    }
+  });
+  document.getElementById('winBox').classList.remove('show');
+  updateCheckBtn();
+  updateStatus();
+}
+
+function clearTileColors() {
+  tiles.forEach(t => t.el.classList.remove('valid', 'invalid'));
+  document.getElementById('winBox').classList.remove('show');
+}
+
+function updateCheckBtn() {
+  document.getElementById('checkBtn').disabled = !(wordSet && tiles.length > 0 && tiles.every(t => t.onBoard));
+}
+
+function updateStatus() {
+  const on = tiles.filter(t => t.onBoard).length, total = tiles.length;
+  if (!total) return;
+  if (on === total) { setStatus('All 12 tiles placed — hit "Check words" when ready.', ''); return; }
+  if (on === 0)     { setStatus('Drag your tiles onto the board to build words.', ''); return; }
+  setStatus(`${on} of ${total} tiles placed. ${total - on} still in the tray.`, '');
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function getWords() {
+  const on = tiles.filter(t => t.onBoard);
+  const grid = {};
+  on.forEach(t => { grid[`${t.gridX},${t.gridY}`] = t; });
+  const words = [];
+  const xs = on.map(t => t.gridX), ys = on.map(t => t.gridY);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  for (let y = minY; y <= maxY; y++) {
+    let run = [];
+    for (let x = minX; x <= maxX + 1; x++) {
+      const t = grid[`${x},${y}`];
+      if (t) run.push(t); else { if (run.length >= 2) words.push([...run]); run = []; }
+    }
+  }
+  for (let x = minX; x <= maxX; x++) {
+    let run = [];
+    for (let y = minY; y <= maxY + 1; y++) {
+      const t = grid[`${x},${y}`];
+      if (t) run.push(t); else { if (run.length >= 2) words.push([...run]); run = []; }
+    }
+  }
+  return words;
+}
+
+function isConnected() {
+  const on = tiles.filter(t => t.onBoard);
+  if (!on.length) return true;
+  const grid = new Set(on.map(t => `${t.gridX},${t.gridY}`));
+  const visited = new Set();
+  const queue = [`${on[0].gridX},${on[0].gridY}`];
+  while (queue.length) {
+    const key = queue.pop();
+    if (visited.has(key)) continue;
+    visited.add(key);
+    const [x, y] = key.split(',').map(Number);
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dy]) => {
+      const nk = `${x+dx},${y+dy}`;
+      if (grid.has(nk) && !visited.has(nk)) queue.push(nk);
+    });
+  }
+  return visited.size === on.length;
+}
+
+function checkWords() {
+  if (checking || !wordSet) return;
+  checking = true;
+  clearTileColors();
+  document.getElementById('checkBtn').disabled = true;
+  setStatus('Checking...', '');
+
+  if (!isConnected()) {
+    setStatus("Your tiles aren't all connected — words must link up like a crossword.", 'error');
+    checking = false; document.getElementById('checkBtn').disabled = false; return;
+  }
+
+  const on = tiles.filter(t => t.onBoard);
+  const gridSet = new Set(on.map(t => `${t.gridX},${t.gridY}`));
+  const isolated = on.filter(t =>
+    ![[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy]) => gridSet.has(`${t.gridX+dx},${t.gridY+dy}`))
+  );
+  if (isolated.length) {
+    isolated.forEach(t => t.el.classList.add('invalid'));
+    setStatus('Some tiles are isolated — every tile must be part of a word.', 'error');
+    checking = false; document.getElementById('checkBtn').disabled = false; return;
+  }
+
+  const words = getWords();
+  if (!words.length) {
+    setStatus('No words found — tiles need to be adjacent to form words.', 'error');
+    checking = false; document.getElementById('checkBtn').disabled = false; return;
+  }
+
+  let allValid = true;
+  const badWords = [];
+  words.forEach(run => {
+    const word = run.map(t => t.letter).join('').toLowerCase();
+    const valid = word.length >= 3 && wordSet.has(word);
+    run.forEach(t => t.el.classList.add(valid ? 'valid' : 'invalid'));
+    if (!valid) { allValid = false; badWords.push(word.toUpperCase() + (word.length < 3 ? ' (too short)' : '')); }
+  });
+
+  if (allValid) {
+    tiles.forEach(t => t.el.classList.add('valid'));
+    setStatus('', 'success');
+    document.getElementById('winBox').classList.add('show');
+  } else {
+    setStatus(`Not valid: ${badWords.join(', ')}`, 'error');
+  }
+
+  checking = false;
+  document.getElementById('checkBtn').disabled = false;
+}
+
+loadWordList();
+</script>
+
+</body>
+</html>
