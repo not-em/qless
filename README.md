@@ -1,6 +1,6 @@
-# Q-Less
+# [Q-Less](https://not-em.github.io/qless/)
 
-An interactive browser-based version of the Q-Less crossword solitaire game.
+An interactive browser-based version of the Q-Less crossword solitaire game hosted on Github pages.
 
 ## Word list
 
