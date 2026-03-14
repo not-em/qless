@@ -1,13 +1,7 @@
 # [Q-Less](https://not-em.github.io/qless/)
 
-An interactive browser-based version of the Q-Less crossword solitaire game hosted on Github pages.
-
-## Word list
-
-This project uses the **SOWPODS** word list — the international Scrabble tournament dictionary, containing approximately 270,000 words.
+Browser-based version of the Q-Less crossword solitaire game hosted on Github pages.
 
 Word list sourced from [jesstess/Scrabble](https://github.com/jesstess/Scrabble).
 
-## Inspired by
-
-The original [Q-Less](https://qlessgame.com) dice game by Tom Sturdevant. Please support the original!
+Inspired by [Q-Less](https://qlessgame.com) game by Tom Sturdevant. Please support the original!
