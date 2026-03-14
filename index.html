@@ -187,10 +187,18 @@ const TILE = parseInt(getComputedStyle(document.documentElement).getPropertyValu
 const OFFSET = (CELL - TILE) / 2;
 
 const DICE = [
-  ['A','E','I','O','U','N'], ['A','E','I','O','U','T'], ['A','E','I','O','U','R'],
-  ['B','C','D','F','G','H'], ['J','K','L','M','N','P'], ['R','S','T','V','W','X'],
-  ['A','E','I','N','R','S'], ['A','E','I','O','T','S'], ['E','I','O','U','L','S'],
-  ['B','C','D','F','M','Y'], ['G','H','J','K','P','Z'], ['N','R','S','T','V','W'],
+  ['M','M','L','L','B','Y'], // 1
+  ['V','E','G','K','P','P'], // 2
+  ['H','H','N','N','R','R'], // 3
+  ['D','F','R','L','L','W'], // 4
+  ['R','R','D','L','G','G'], // 5
+  ['X','K','B','S','Z','N'], // 6
+  ['W','H','H','T','T','P'], // 7
+  ['C','C','B','T','J','D'], // 8
+  ['C','C','M','T','T','S'], // 9
+  ['O','I','I','N','N','Y'], // 10
+  ['A','E','I','O','U','U'], // 11
+  ['A','A','E','E','O','O'], // 12
 ];
 
 let tiles = [], dragTile = null, floater = null, dragOffX = 0, dragOffY = 0;
