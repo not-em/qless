@@ -219,6 +219,7 @@
       <button class="btn" id="customBtn" onclick="toggleCustomInput()">Custom letters</button>
     </div>
     <button class="btn primary" id="checkBtn" onclick="checkWords()" disabled>Check words</button>
+    <button class="btn" id="solveBtn" onclick="solveForMe()" disabled>Solve for me</button>
   </div>
 
   <div class="custom-input" id="customInputArea" style="display:none;">
@@ -404,7 +405,65 @@ function clearTileColors() {
 }
 
 function updateCheckBtn() {
-  document.getElementById('checkBtn').disabled = !(wordSet && tiles.length > 0 && tiles.every(t => t.onBoard));
+  const ready = !!(wordSet && tiles.length > 0 && tiles.every(t => t.onBoard));
+  document.getElementById('checkBtn').disabled = !ready;
+  document.getElementById('solveBtn').disabled = !(wordSet && tiles.length > 0);
+}
+
+async function solveForMe() {
+  if (!wordSet || tiles.length === 0) return;
+  const btn = document.getElementById('solveBtn');
+  btn.disabled = true;
+  setStatus('Solving…', 'loading');
+
+  try {
+    const res = await fetch('/api/solve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tiles: tiles.map(t => t.letter) }),
+    });
+
+    if (!res.ok) {
+      setStatus('Solver error — please try again.', 'error');
+      return;
+    }
+
+    const data = await res.json();
+
+    if (!data.solved) {
+      setStatus('No solution found for these tiles.', 'error');
+      return;
+    }
+
+    // Clear the board, then place tiles at the coordinates returned by the solver.
+    clearBoard();
+    const board = document.getElementById('board');
+    const used   = new Set();
+
+    for (const [coord, letter] of Object.entries(data.grid)) {
+      const [gx, gy] = coord.split(',').map(Number);
+      const tile = tiles.find(t => t.letter === letter && !used.has(t.id));
+      if (!tile) continue;
+
+      used.add(tile.id);
+      tile.onBoard = true;
+      tile.gridX   = gx;
+      tile.gridY   = gy;
+      tile.el.classList.add('on-board');
+      tile.el.style.left = (gx * CELL + OFFSET) + 'px';
+      tile.el.style.top  = (gy * CELL + OFFSET) + 'px';
+      board.appendChild(tile.el);
+    }
+
+    updateCheckBtn();
+    updateStatus();
+    setStatus(`Solved! Words: ${data.words.join(', ')}. Hit "Check words" to verify.`, '');
+
+  } catch (_) {
+    setStatus('Could not reach the solver — is the server running?', 'error');
+  } finally {
+    btn.disabled = !(wordSet && tiles.length > 0);
+  }
 }
 
 function updateStatus() {
