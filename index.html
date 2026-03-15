@@ -438,20 +438,31 @@ async function solveForMe() {
     // Clear the board, then place tiles at the coordinates returned by the solver.
     clearBoard();
     const board = document.getElementById('board');
-    const used   = new Set();
+    const used  = new Set();
+
+    // Centre the solution: compute its span, then offset so it sits in the middle.
+    const coords  = Object.keys(data.grid).map(c => c.split(',').map(Number));
+    const solCols = Math.max(...coords.map(([x]) => x)) + 1;
+    const solRows = Math.max(...coords.map(([, y]) => y)) + 1;
+    const boardCols = Math.floor(board.clientWidth  / CELL);
+    const boardRows = Math.floor(board.clientHeight / CELL);
+    const offsetX = Math.max(0, Math.floor((boardCols - solCols) / 2));
+    const offsetY = Math.max(0, Math.floor((boardRows - solRows) / 2));
 
     for (const [coord, letter] of Object.entries(data.grid)) {
       const [gx, gy] = coord.split(',').map(Number);
       const tile = tiles.find(t => t.letter === letter && !used.has(t.id));
       if (!tile) continue;
 
+      const cx = gx + offsetX;
+      const cy = gy + offsetY;
       used.add(tile.id);
       tile.onBoard = true;
-      tile.gridX   = gx;
-      tile.gridY   = gy;
+      tile.gridX   = cx;
+      tile.gridY   = cy;
       tile.el.classList.add('on-board');
-      tile.el.style.left = (gx * CELL + OFFSET) + 'px';
-      tile.el.style.top  = (gy * CELL + OFFSET) + 'px';
+      tile.el.style.left = (cx * CELL + OFFSET) + 'px';
+      tile.el.style.top  = (cy * CELL + OFFSET) + 'px';
       board.appendChild(tile.el);
     }
 
