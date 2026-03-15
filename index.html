@@ -134,6 +134,19 @@
     footer { margin-top: 2.5rem; font-size: 0.78rem; color: var(--color-hint); text-align: center; line-height: 1.8; }
     footer a { color: var(--color-muted); }
 
+    .custom-input {
+      display: flex; gap: 8px; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap;
+    }
+    .letters-input {
+      flex: 1; min-width: 180px; padding: 7px 12px; font-size: 15px; border-radius: 8px;
+      border: 0.5px solid var(--color-border); background: var(--bg-input);
+      color: var(--color-text); font-family: inherit; text-transform: uppercase;
+      letter-spacing: 3px; font-weight: 500;
+    }
+    .letters-input:focus { outline: none; border-color: var(--color-border-strong); }
+    .letters-input::placeholder { letter-spacing: normal; font-weight: normal; font-size: 13px; }
+    .letters-hint { font-size: 12px; color: var(--color-hint); align-self: center; }
+
     @media (max-width: 540px) {
       :root { --cell: 40px; --tile: 34px; }
       body { padding: 1rem 0.5rem; }
@@ -153,13 +166,23 @@
 </header>
 
 <div class="card">
+  <p class="toolbar-title" style="margin-bottom:0.6rem;">Words must be 3+ letters &middot; no proper nouns &middot; all tiles must connect</p>
   <div class="toolbar">
-    <span class="toolbar-title">Words must be 3+ letters &middot; no proper nouns &middot; all tiles must connect</span>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn" onclick="clearBoard()">Clear board</button>
       <button class="btn" onclick="rollDice()">Reroll</button>
-      <button class="btn primary" id="checkBtn" onclick="checkWords()" disabled>Check words</button>
+      <button class="btn" id="customBtn" onclick="toggleCustomInput()">Custom letters</button>
     </div>
+    <button class="btn primary" id="checkBtn" onclick="checkWords()" disabled>Check words</button>
+  </div>
+
+  <div class="custom-input" id="customInputArea" style="display:none;">
+    <input type="text" id="customLetters" class="letters-input" maxlength="19"
+           placeholder="Type 5–19 letters"
+           oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '').toUpperCase(); updateCustomHint()"
+           onkeydown="if(event.key==='Enter') useCustomLetters()" />
+    <span class="letters-hint" id="customHint">0 letters</span>
+    <button class="btn primary" onclick="useCustomLetters()">Use these</button>
   </div>
 
   <div class="board-wrap">
@@ -173,12 +196,13 @@
 
   <div class="win" id="winBox">
     <h2>You solved it!</h2>
-    <p>All 12 letters used in connected, valid words. Well done.</p>
+    <p>All tiles used in connected, valid words. Well done.</p>
   </div>
 </div>
 
 <footer>
   Word list: <a href="https://github.com/jesstess/Scrabble" target="_blank">SOWPODS via jesstess/Scrabble</a>
+  &middot; <a href="https://github.com/not-em/qless" target="_blank">GitHub</a>
 </footer>
 
 <script>
@@ -341,7 +365,7 @@ function updateCheckBtn() {
 function updateStatus() {
   const on = tiles.filter(t => t.onBoard).length, total = tiles.length;
   if (!total) return;
-  if (on === total) { setStatus('All 12 tiles placed — hit "Check words" when ready.', ''); return; }
+  if (on === total) { setStatus(`All ${total} tiles placed — hit "Check words" when ready.`, ''); return; }
   if (on === 0)     { setStatus('Drag your tiles onto the board to build words.', ''); return; }
   setStatus(`${on} of ${total} tiles placed. ${total - on} still in the tray.`, '');
 }
@@ -447,6 +471,55 @@ function checkWords() {
 }
 
 loadWordList();
+
+function toggleCustomInput() {
+  const area = document.getElementById('customInputArea');
+  const btn  = document.getElementById('customBtn');
+  const open = area.style.display === 'none' || area.style.display === '';
+  area.style.display = open ? 'flex' : 'none';
+  btn.classList.toggle('primary', open);
+  if (open) {
+    const inp = document.getElementById('customLetters');
+    inp.focus();
+    inp.addEventListener('input', updateCustomHint);
+    updateCustomHint.call(inp);
+  }
+}
+
+function updateCustomHint() {
+  const n = document.getElementById('customLetters').value.length;
+  const hint = document.getElementById('customHint');
+  hint.textContent = n + ' letter' + (n === 1 ? '' : 's');
+  hint.style.color = (n >= 5 && n <= 19) ? 'var(--color-border-strong)' : 'var(--color-hint)';
+}
+
+function useCustomLetters() {
+  const raw = document.getElementById('customLetters').value.toUpperCase().replace(/[^A-Z]/g, '');
+  if (raw.length < 5 || raw.length > 19) {
+    setStatus('Please enter between 5 and 19 letters to use custom tiles.', 'error');
+    document.getElementById('customLetters').focus();
+    return;
+  }
+  tiles = [];
+  document.getElementById('board').innerHTML = '';
+  document.getElementById('tray').innerHTML = '';
+  document.getElementById('winBox').classList.remove('show');
+  if (wordSet) setStatus(`Drag all ${raw.length} tiles onto the board, then hit "Check words".`, '');
+  const tray = document.getElementById('tray');
+  raw.split('').forEach((letter, i) => {
+    const tile = { id: i, letter, onBoard: false, gridX: 0, gridY: 0, el: null };
+    tiles.push(tile);
+    tile.el = makeTile(tile);
+    tray.appendChild(tile.el);
+  });
+  updateCheckBtn();
+  updateStatus();
+  // close the panel and reset it
+  document.getElementById('customInputArea').style.display = 'none';
+  document.getElementById('customBtn').classList.remove('primary');
+  document.getElementById('customLetters').value = '';
+  document.getElementById('customHint').textContent = '0 letters';
+}
 </script>
 
 </body>
