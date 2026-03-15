@@ -486,7 +486,7 @@ async function solveForMe() {
     setStatus('Could not reach the solver — is the server running?', 'error');
   } finally {
     btn.classList.remove('solving');
-    btn.textContent = 'Solve for me';
+    btn.textContent = 'solve for me';
     btn.disabled = !(wordSet && tiles.length > 0);
   }
 }
