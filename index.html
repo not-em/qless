@@ -216,19 +216,21 @@
 
 <header>
   <h1>q-less</h1>
-  <p><a href="https://qlessgame.com/" target="_blank">support the original</a>.</p>
+  <p><a href="https://qlessgame.com/" target="_blank">support the original</a> &middot; <a href="#" id="shareBtn" onclick="event.preventDefault(); copyShareLink()">copy game link</a></p>
 </header>
 
 <div class="card">
   <p class="toolbar-title" style="margin-bottom:0.6rem;">words must be 3+ letters &middot; no proper nouns &middot; all tiles must connect</p>
   <div class="toolbar">
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn" onclick="clearBoard()">clear board</button>
       <button class="btn" onclick="rollDice()">reroll</button>
       <button class="btn" id="customBtn" onclick="toggleCustomInput()">custom letters</button>
     </div>
-    <button class="btn primary" id="checkBtn" onclick="checkWords()" disabled>check words</button>
-    <button class="btn" id="solveBtn" onclick="solveForMe()" disabled>solve for me</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn" onclick="clearBoard()">clear board</button>
+      <button class="btn" id="solveBtn" onclick="solveForMe()" disabled>solve for me</button>
+      <button class="btn primary" id="checkBtn" onclick="checkWords()" disabled>check words</button>
+    </div>
   </div>
 
   <div class="custom-input" id="customInputArea" style="display:none;">
@@ -244,7 +246,10 @@
     <div class="board" id="board"></div>
   </div>
 
-  <div class="tray-label">drag tiles onto the board to build words</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+    <div class="tray-label">drag tiles onto the board to build words</div>
+    <button class="btn" id="shuffleBtn" onclick="shuffleTray()">shuffle</button>
+  </div>
   <div class="tray" id="tray"></div>
 
   <div class="status loading" id="status">Loading word list...</div>
@@ -284,6 +289,27 @@ const DICE = [
 let tiles = [], dragTile = null, floater = null, dragOffX = 0, dragOffY = 0;
 let wordSet = null, checking = false;
 
+// --- URL sharing helpers ---
+function getHashLetters() {
+  const h = location.hash.slice(1).toUpperCase().replace(/[^A-Z]/g, '');
+  return (h.length >= 5 && h.length <= 19) ? h : null;
+}
+
+function setHashLetters(letters) {
+  history.replaceState(null, '', '#' + letters);
+}
+
+function copyShareLink() {
+  const url = location.href.split('#')[0] + (tiles.length ? '#' + tiles.map(t => t.letter).join('') : '');
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('shareBtn');
+    const prev = btn.textContent;
+    btn.textContent = 'copied!';
+    setTimeout(() => { btn.textContent = prev; }, 1800);
+  });
+}
+// ---
+
 async function loadWordList() {
   try {
     const res = await fetch('words.txt');
@@ -295,7 +321,9 @@ async function loadWordList() {
         .filter(w => w.length >= 3)
     );
     setStatus('drag all tiles onto the board, then hit "check words".', '');
-    rollDice();
+    const saved = getHashLetters();
+    if (saved) useTilesFromLetters(saved);
+    else rollDice();
   } catch {
     setStatus('could not load word list — make sure words.txt is in the same folder.', 'error');
   }
@@ -316,6 +344,7 @@ function rollDice() {
     tile.el = makeTile(tile);
     tray.appendChild(tile.el);
   });
+  setHashLetters(tiles.map(t => t.letter).join(''));
   updateCheckBtn();
 }
 
@@ -639,13 +668,7 @@ function updateCustomHint() {
   hint.style.color = (n >= 5 && n <= 19) ? 'var(--color-border-strong)' : 'var(--color-hint)';
 }
 
-function useCustomLetters() {
-  const raw = document.getElementById('customLetters').value.toUpperCase().replace(/[^A-Z]/g, '');
-  if (raw.length < 5 || raw.length > 19) {
-    setStatus('Please enter between 5 and 19 letters to use custom tiles.', 'error');
-    document.getElementById('customLetters').focus();
-    return;
-  }
+function useTilesFromLetters(raw) {
   tiles = [];
   document.getElementById('board').innerHTML = '';
   document.getElementById('tray').innerHTML = '';
@@ -658,8 +681,29 @@ function useCustomLetters() {
     tile.el = makeTile(tile);
     tray.appendChild(tile.el);
   });
+  setHashLetters(raw);
   updateCheckBtn();
   updateStatus();
+}
+
+function shuffleTray() {
+  const tray = document.getElementById('tray');
+  const trayTiles = tiles.filter(t => !t.onBoard);
+  for (let i = trayTiles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [trayTiles[i], trayTiles[j]] = [trayTiles[j], trayTiles[i]];
+  }
+  trayTiles.forEach(t => tray.appendChild(t.el));
+}
+
+function useCustomLetters() {
+  const raw = document.getElementById('customLetters').value.toUpperCase().replace(/[^A-Z]/g, '');
+  if (raw.length < 5 || raw.length > 19) {
+    setStatus('Please enter between 5 and 19 letters to use custom tiles.', 'error');
+    document.getElementById('customLetters').focus();
+    return;
+  }
+  useTilesFromLetters(raw);
   // close the panel and reset it
   document.getElementById('customInputArea').style.display = 'none';
   document.getElementById('customBtn').classList.remove('primary');
