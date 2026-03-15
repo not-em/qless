@@ -4,4 +4,4 @@ Browser-based version of the Q-Less crossword solitaire game hosted on Github pa
 
 Word list sourced from [jesstess/Scrabble](https://github.com/jesstess/Scrabble).
 
-Inspired by [Q-Less](https://qlessgame.com) game by Tom Sturdevant. Please support the original!
+Inspired by the physical [Q-Less](https://qlessgame.com) game by Tom Sturdevant. Please support the original!
