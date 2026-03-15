@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Q-Less</title>
+  <title>q-less</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -215,20 +215,20 @@
 <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode"></button>
 
 <header>
-  <h1>Q-Less</h1>
-  <p><a href="https://qlessgame.com/" target="_blank">Support the original</a>.</p>
+  <h1>q-less</h1>
+  <p><a href="https://qlessgame.com/" target="_blank">support the original</a>.</p>
 </header>
 
 <div class="card">
-  <p class="toolbar-title" style="margin-bottom:0.6rem;">Words must be 3+ letters &middot; no proper nouns &middot; all tiles must connect</p>
+  <p class="toolbar-title" style="margin-bottom:0.6rem;">words must be 3+ letters &middot; no proper nouns &middot; all tiles must connect</p>
   <div class="toolbar">
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn" onclick="clearBoard()">Clear board</button>
-      <button class="btn" onclick="rollDice()">Reroll</button>
-      <button class="btn" id="customBtn" onclick="toggleCustomInput()">Custom letters</button>
+      <button class="btn" onclick="clearBoard()">clear board</button>
+      <button class="btn" onclick="rollDice()">reroll</button>
+      <button class="btn" id="customBtn" onclick="toggleCustomInput()">custom letters</button>
     </div>
-    <button class="btn primary" id="checkBtn" onclick="checkWords()" disabled>Check words</button>
-    <button class="btn" id="solveBtn" onclick="solveForMe()" disabled>Solve for me</button>
+    <button class="btn primary" id="checkBtn" onclick="checkWords()" disabled>check words</button>
+    <button class="btn" id="solveBtn" onclick="solveForMe()" disabled>solve for me</button>
   </div>
 
   <div class="custom-input" id="customInputArea" style="display:none;">
@@ -244,14 +244,14 @@
     <div class="board" id="board"></div>
   </div>
 
-  <div class="tray-label">Your tiles — drag onto the board to build words</div>
+  <div class="tray-label">drag tiles onto the board to build words</div>
   <div class="tray" id="tray"></div>
 
   <div class="status loading" id="status">Loading word list...</div>
 
   <div class="win" id="winBox">
-    <h2>You solved it!</h2>
-    <p>All tiles used in connected, valid words. Well done.</p>
+    <h2>solved!</h2>
+    <p>all tiles used in connected, valid words.</p>
   </div>
 </div>
 
@@ -294,10 +294,10 @@ async function loadWordList() {
         .map(w => w.trim().toLowerCase())
         .filter(w => w.length >= 3)
     );
-    setStatus('Drag all 12 tiles onto the board, then hit "Check words".', '');
+    setStatus('drag all tiles onto the board, then hit "check words".', '');
     rollDice();
   } catch {
-    setStatus('Could not load word list — make sure words.txt is in the same folder.', 'error');
+    setStatus('could not load word list — make sure words.txt is in the same folder.', 'error');
   }
 }
 
@@ -308,7 +308,7 @@ function rollDice() {
   document.getElementById('board').innerHTML = '';
   document.getElementById('tray').innerHTML = '';
   document.getElementById('winBox').classList.remove('show');
-  if (wordSet) setStatus('Drag all 12 tiles onto the board, then hit "Check words".', '');
+  if (wordSet) setStatus('drag all tiles onto the board, then hit "check words".', '');
   const tray = document.getElementById('tray');
   DICE.map(rollDie).forEach((letter, i) => {
     const tile = { id: i, letter, onBoard: false, gridX: 0, gridY: 0, el: null };
@@ -425,7 +425,7 @@ async function solveForMe() {
   const btn = document.getElementById('solveBtn');
   btn.disabled = true;
   btn.classList.add('solving');
-  btn.textContent = 'Solving…';
+  btn.textContent = 'solving…';
   setStatus('Solving…', 'loading');
 
   try {
@@ -480,7 +480,7 @@ async function solveForMe() {
 
     updateCheckBtn();
     updateStatus();
-    setStatus(`Solved! Words: ${data.words.join(', ')}. Hit "Check words" to verify.`, '');
+    setStatus(`solved! words: ${data.words.join(', ')}. hit "check words" to verify.`, '');
 
   } catch (_) {
     setStatus('Could not reach the solver — is the server running?', 'error');
@@ -494,8 +494,8 @@ async function solveForMe() {
 function updateStatus() {
   const on = tiles.filter(t => t.onBoard).length, total = tiles.length;
   if (!total) return;
-  if (on === total) { setStatus(`All ${total} tiles placed — hit "Check words" when ready.`, ''); return; }
-  if (on === 0)     { setStatus('Drag your tiles onto the board to build words.', ''); return; }
+  if (on === total) { setStatus(`all ${total} tiles placed; hit "check words" when ready.`, ''); return; }
+  if (on === 0)     { setStatus('drag your tiles onto the board to build words.', ''); return; }
   setStatus(`${on} of ${total} tiles placed. ${total - on} still in the tray.`, '');
 }
 
@@ -557,7 +557,7 @@ function checkWords() {
   setStatus('Checking...', '');
 
   if (!isConnected()) {
-    setStatus("Your tiles aren't all connected — words must link up like a crossword.", 'error');
+    setStatus("your tiles aren't all connected — words must link up like a crossword.", 'error');
     checking = false; document.getElementById('checkBtn').disabled = false; return;
   }
 
@@ -592,7 +592,7 @@ function checkWords() {
     setStatus('', 'success');
     document.getElementById('winBox').classList.add('show');
   } else {
-    setStatus(`Not valid: ${badWords.join(', ')}`, 'error');
+    setStatus(`not valid: ${badWords.join(', ')}`, 'error');
   }
 
   checking = false;
@@ -650,7 +650,7 @@ function useCustomLetters() {
   document.getElementById('board').innerHTML = '';
   document.getElementById('tray').innerHTML = '';
   document.getElementById('winBox').classList.remove('show');
-  if (wordSet) setStatus(`Drag all ${raw.length} tiles onto the board, then hit "Check words".`, '');
+  if (wordSet) setStatus(`drag all ${raw.length} tiles onto the board, then hit "check words".`, '');
   const tray = document.getElementById('tray');
   raw.split('').forEach((letter, i) => {
     const tile = { id: i, letter, onBoard: false, gridX: 0, gridY: 0, el: null };
