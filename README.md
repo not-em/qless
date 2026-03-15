@@ -1,6 +1,6 @@
 # [Q-Less](https://qless-8p8a.onrender.com/)
 
-Browser-based version of the Q-Less crossword solitaire game hosted on Github pages.
+Browser-based version of the Q-Less crossword solitaire game with a "solver" function and option for custom letters.
 
 Word list built from [ENABLE via dolph/dictionary](https://github.com/dolph/dictionary), filtered against the [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) English frequency list.
 
